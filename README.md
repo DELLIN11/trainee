@@ -5,6 +5,7 @@ cd trainee
 
 # Раздел 1
 cd section-1 && ./checker.sh
+> В связи с недоступностью httpstat.us в локальной сети использован httpbin.org (поведение идентично).
 
 # Раздел 2
 cd ../section-2 && docker build -t http-checker . && docker run --rm http-checker
