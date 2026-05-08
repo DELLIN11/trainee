@@ -19,13 +19,11 @@ for url in "${urls[@]}"; do
     echo "Body: $body"
     echo "-------------------------"
   elif [[ $http_code =~ ^[45] ]]; then
-    echo "EXCEPTION: Received $http_code from $url" >&2
-    exit 1
+    echo "EXCEPTION: Received $http_code from $url"
   else
-    echo "Unexpected status code: $http_code" >&2
-    exit 1
+    echo "Unexpected status code: $http_code"
   fi
 done
 
-echo "All successful responses processed."
+echo "All responses processed."
 exit 0

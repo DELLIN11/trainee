@@ -1,0 +1,102 @@
+---
+- name: Setup Docker and verify script in container
+  hosts: local
+  become: yes
+  vars:
+    build_dir: /tmp/http-checker-build
+  tasks:
+    - name: Install system packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add current user to docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+
+    - name: Check Docker version
+      command: docker --version
+      register: docker_version_check
+      changed_when: false
+
+    - name: Display Docker version
+      debug:
+        var: docker_version_check.stdout
+
+#    - name: Copy build context to host
+ #     copy:
+ #       src: "../section-2/"
+ #       dest: "{{ build_dir }}"
+
+#    - name: Build Docker image
+ #     docker_image:
+  #      name: http-checker
+  #      tag: latest
+   #     build:
+    #      path: "{{ build_dir }}"
+    #    source: build
+    #    state: present
+
+    - name: Start container
+      docker_container:
+        name: http-checker-test
+        image: http-checker:latest
+        state: started
+        detach: yes
+
+    - name: Wait for container to exit
+      command: docker wait http-checker-test
+      register: container_wait
+
+    - name: Get container logs
+      command: docker logs http-checker-test
+      register: container_logs
+
+    - name: Print logs
+      debug:
+        var: container_logs.stdout_lines
+
+    - name: Assert logs contain expected keywords
+      assert:
+        that:
+          - "'Status: 200' in container_logs.stdout"
+          - "'EXCEPTION: Received 404' in container_logs.stdout"
+        success_msg: "Logs contain expected output"
+        fail_msg: "Logs do not match expected pattern"
+
+    - name: Remove test container
+      docker_container:
+        name: http-checker-test
+        state: absent
