@@ -1,4 +1,3 @@
-## Описание разделов 
 # Стажёрское задание: HTTP-клиент, Docker, Ansible
 
 git clone https://github.com/DELLIN11/trainee.git
